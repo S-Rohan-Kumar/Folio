@@ -1,0 +1,76 @@
+name: pagebound
+description: A premium reading tracker with AI, community, and battles.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+  
+  # Routing
+  go_router: ^13.2.0
+  
+  # Backend
+  supabase_flutter: ^2.5.0
+  
+  # HTTP
+  dio: ^5.4.3
+  
+  # Barcode
+  mobile_scanner: ^5.2.3
+  
+  # Charts
+  fl_chart: ^0.68.0
+  
+  # Images
+  cached_network_image: ^3.3.1
+  
+  # Local Storage
+  hive_flutter: ^1.1.0
+  
+  # UI
+  flutter_animate: ^4.5.0
+  shimmer: ^3.0.0
+  
+  # Fonts
+  google_fonts: ^6.2.1
+  
+  # Sharing
+  share_plus: ^7.2.2
+  
+  # Notifications
+  flutter_local_notifications: ^17.2.0
+  
+  # Permissions
+  permission_handler: ^11.3.1
+  
+  # Connectivity
+  connectivity_plus: ^6.0.3
+  
+  # Utils
+  flutter_dotenv: ^5.1.0
+  intl: ^0.19.0
+  uuid: ^4.4.0
+  collection: ^1.18.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  riverpod_generator: ^2.4.3
+  build_runner: ^2.4.9
+  mockito: ^5.4.4
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+    - assets/images/
+    - assets/lottie/
