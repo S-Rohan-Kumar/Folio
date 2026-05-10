@@ -30,6 +30,10 @@ class BookSearchNotifier extends AsyncNotifier<List<Book>> {
   }
 
   void clear() => state = const AsyncValue.data([]);
+
+  Future<Book?> searchByIsbn(String isbn) async {
+    return ref.read(fetchBookByIsbnUseCaseProvider).call(isbn);
+  }
 }
 
 final bookSearchNotifierProvider =

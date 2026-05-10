@@ -19,6 +19,7 @@ dependencies:
   
   # Backend
   supabase_flutter: ^2.5.0
+  google_sign_in: ^6.2.1
   
   # HTTP
   dio: ^5.4.3

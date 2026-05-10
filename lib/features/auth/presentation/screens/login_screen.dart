@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/app_text_field.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -14,86 +16,123 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _email = TextEditingController();
-  final _password = TextEditingController();
-  bool _isLoading = false;
-  String? _error;
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  bool _obscure = true;
 
-  Future<void> _login() async {
-    setState(() { _isLoading = true; _error = null; });
-    try {
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: _email.text.trim(),
-        password: _password.text,
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin() async {
+    final email = _emailCtrl.text.trim();
+    final pass = _passCtrl.text;
+
+    if (email.isEmpty || pass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields'), backgroundColor: AppColors.error),
       );
-      // Navigation is handled by router redirect
-    } on AuthException catch (e) {
-      setState(() => _error = e.message);
-    } catch (e) {
-      setState(() => _error = 'An unexpected error occurred');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    if (!email.contains('@') || !email.contains('.')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email'), backgroundColor: AppColors.error),
+      );
+      return;
+    }
+
+    await ref.read(authNotifierProvider.notifier).signIn(email, pass);
+    
+    if (!mounted) return;
+    final state = ref.read(authNotifierProvider);
+    if (state.hasError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(state.error.toString()), backgroundColor: AppColors.error),
+      );
+    } else {
+      context.go('/home');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Welcome back', style: AppTextStyles.displayMedium, textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              Text('Sign in to continue your reading journey', style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
-              const SizedBox(height: 48),
-              if (_error != null) ...[
-                Text(_error!, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error), textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-              ],
-              _buildTextField(_email, 'Email', Icons.email_outlined, false),
-              const SizedBox(height: 16),
-              _buildTextField(_password, 'Password', Icons.lock_outline, true),
-              const SizedBox(height: 32),
-              AppButton(
-                label: 'Sign In',
-                isLoading: _isLoading,
-                onPressed: _login,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Don't have an account?", style: AppTextStyles.bodyMedium),
-                  TextButton(
-                    onPressed: () => context.push('/auth/signup'),
-                    child: const Text('Sign Up', style: TextStyle(color: AppColors.amber)),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: Spacing.xxl),
+                Text("Welcome back", style: AppTextStyles.displayMedium.copyWith(color: AppColors.textPrimary)),
+                const SizedBox(height: Spacing.xs),
+                Text("Sign in to continue reading", style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: Spacing.xl),
+                AppTextField(
+                  label: "Email",
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: Spacing.md),
+                AppTextField(
+                  label: "Password",
+                  controller: _passCtrl,
+                  obscureText: _obscure,
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
+                    onPressed: () => setState(() => _obscure = !_obscure),
                   ),
-                ],
-              ),
-            ],
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push('/auth/forgot_password'),
+                    child: const Text('Forgot password?', style: TextStyle(color: AppColors.amber)),
+                  ),
+                ),
+                const SizedBox(height: Spacing.lg),
+                AppButton(
+                  label: "Sign In",
+                  isLoading: authState.isLoading,
+                  onPressed: _handleLogin,
+                ),
+                const SizedBox(height: Spacing.md),
+                Row(
+                  children: [
+                    const Expanded(child: Divider(color: AppColors.elevated)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+                      child: Text("or", style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                    ),
+                    const Expanded(child: Divider(color: AppColors.elevated)),
+                  ],
+                ),
+                const SizedBox(height: Spacing.md),
+                GoogleSignInButton(
+                  onTap: () => ref.read(authNotifierProvider.notifier).signInWithGoogle(),
+                ),
+                const SizedBox(height: Spacing.xl),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Don't have an account?", style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)),
+                    TextButton(
+                      onPressed: () => context.push('/auth/signup'),
+                      child: const Text("Sign up", style: TextStyle(color: AppColors.amber)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String hint, IconData icon, bool obscure) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      style: AppTextStyles.bodyLarge,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: AppTextStyles.bodyMedium,
-        prefixIcon: Icon(icon, color: AppColors.textHint),
-        filled: true,
-        fillColor: AppColors.surfaceVariant,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
   }

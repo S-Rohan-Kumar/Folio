@@ -34,7 +34,7 @@ class BookCardShimmer extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ShimmerBox(width: double.infinity, height: 180, borderRadius: RadiusSize.md),
+        Expanded(child: ShimmerBox(width: double.infinity, height: double.infinity, borderRadius: RadiusSize.md)),
         const SizedBox(height: 8),
         ShimmerBox(width: double.infinity, height: 14),
         const SizedBox(height: 4),
